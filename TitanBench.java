@@ -103,10 +103,10 @@ public class TitanBench {
                 for (Edge e: getVertex(Integer.valueOf(arr[0])).getEdges(Direction.OUT, "nbr")) {
                     TitanVertex v = (TitanVertex) e.getVertex(Direction.IN);
                     for (TitanProperty p: v.getProperties()) {
-                        System.out.print(" " + p.getValue(Integer.class));
+                        //System.out.print(" " + p.getValue(Integer.class));
                     }
                 }
-                System.out.println();
+                //System.out.println();
                 cnt++;
             }
             file.close();
