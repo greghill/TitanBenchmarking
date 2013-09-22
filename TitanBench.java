@@ -129,8 +129,8 @@ public class TitanBench {
 
     public static boolean req_single(Integer n1, Integer n2, Integer req) {
         total_reqs++;
-        Object targetId = getVertex(n2).getId();
         long start = System.nanoTime();
+        Object targetId = getVertex(n2).getId();
         //System.out.println("reachability " + n1 + " to " + n2);
         ArrayDeque<Vertex> visited = new ArrayDeque<Vertex>();
         visited.add(getVertex(n1));
@@ -144,45 +144,13 @@ public class TitanBench {
                     //System.out.println("at " + v.getId() + " with neighboring vertex " + nbr.getId());
                     boolean vis = false;
                     Integer visit = (Integer) nbr.getProperty(VISIT);
-                    if (visit != null && visit.equals(req)) {
-                        //System.out.println("VISITED!");
-                        vis = true;
-                    }
-                    if (!vis) {
+                    if (visit == null || !visit.equals(req)) {
                         nbr.setProperty(VISIT, req);
                         visited.add(nbr);
                     }
                 }
             }
         }
-        /*
-        ArrayList<Vertex> visited = new ArrayList<Vertex>();
-        visited.add(getVertex(n1));
-        int idx = 0;
-        while (idx < visited.size()) {
-            Vertex v = visited.get(idx);
-            if (v.getId().equals(getVertex(n2).getId())) {
-                total_time += (System.nanoTime()-start);
-                return true;
-            } else {
-                for (Vertex nbr: v.getVertices(Direction.OUT, "nbr")) {
-                    //System.out.println("at " + v.getId() + " with neighboring vertex " + nbr.getId());
-                    boolean vis = false;
-                    Integer visit = (Integer) nbr.getProperty(VISIT);
-                    if (visit != null && visit.equals(req)) {
-                        //System.out.println("VISITED!");
-                        vis = true;
-                    }
-                    if (!vis) {
-                        nbr.setProperty(VISIT, req);
-                        visited.add(nbr);
-                    }
-                }
-            }
-            idx++;
-        }
-        */
-        //System.out.println("Not reachable, took "+(System.nanoTime()-start)/1e6);
         total_time += (System.nanoTime()-start);
         return false;
     }
