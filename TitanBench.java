@@ -24,6 +24,8 @@ public class TitanBench {
 
     public static long total_reqs = 0;
     public static long total_time = 0;
+    public static long total_2reqs = 0;
+    public static long total_2time = 0;
     public static final String INDEX_NAME = "search";
     public static final String ID = "vertex_id";
     public static final String VISIT = "visit";
@@ -131,27 +133,36 @@ public class TitanBench {
         return req_single(n1, n2, req, -1);
     }
 
-    public static boolean req_single(Integer n1, Integer n2, Integer req, int hops_left) {
+    public static boolean req_single(Integer n1, Integer n2, Integer req, final int max_hops) {
         //System.out.println("reachability " + n1 + " to " + n2);
-        total_reqs++;
+        int hops = 0;
+        if (max_hops >= 0)
+            total_2reqs++;
+        else
+            total_reqs++;
+
         long start = System.nanoTime();
         Object targetId = getVertex(n2).getId();
         ArrayDeque<Vertex> exploringDepth = new ArrayDeque<Vertex>();
         ArrayDeque<Vertex> nextDepth = new ArrayDeque<Vertex>();
         exploringDepth.add(getVertex(n1));
-        while (!exploringDepth.isEmpty() && hops_left != 0){
+        while (!exploringDepth.isEmpty() && hops != max_hops){
             while (!exploringDepth.isEmpty()) {
                 Vertex v = exploringDepth.remove();
-                if (v.getId().equals(targetId)) {
-                    total_time += (System.nanoTime()-start);
-                    return true;
-                } else {
-                    for (Vertex nbr: v.getVertices(Direction.OUT, "nbr")) {
-                        //System.out.println("at " + v.getId() + " with neighboring vertex " + nbr.getId());
-                        if (!req.equals( (Integer) nbr.getProperty(VISIT))){
-                            nbr.setProperty(VISIT, req);
-                            nextDepth.add(nbr);
-                        }
+                for (Vertex nbr: v.getVertices(Direction.OUT, "nbr")) {
+                    if (nbr.getId().equals(targetId)) { // found target
+                        long net = System.nanoTime()-start;
+                        if (max_hops >= 0)
+                            total_2time += net;
+                        else
+                            total_time += net;
+                        hops++;
+                //        System.out.println("found in " +hops+" hops");
+                        return true;
+                    }
+                    else if (!req.equals((Integer) nbr.getProperty(VISIT))) {
+                        nbr.setProperty(VISIT, req);
+                        nextDepth.add(nbr);
                     }
                 }
             }
@@ -159,9 +170,14 @@ public class TitanBench {
             ArrayDeque<Vertex> temp = exploringDepth;
             exploringDepth = nextDepth;
             nextDepth = temp;
-            hops_left--;
+            hops++;
         }
-        total_time += (System.nanoTime()-start);
+        //System.out.println("not found in " +hops+" hops");
+        long net = System.nanoTime()-start;
+        if (max_hops >= 0)
+            total_2time += net;
+        else
+            total_time += net;
         return false;
     }
 
@@ -177,10 +193,26 @@ public class TitanBench {
             while ((line = file.readLine()) != null) {
                 String[] arr = line.split(" ");
                 System.out.println("Processing request " + cnt);
-                if (req_single(Integer.valueOf(arr[0]), Integer.valueOf(arr[1]), cnt++))
-                    System.out.println(arr[2].equals("True"));
+                Integer source = Integer.valueOf(arr[0]);
+                Integer dest = Integer.valueOf(arr[1]);
+                String reachabile = arr[2];
+                String tworeachabile = arr[3];
+                String fourreachabile = arr[4];
+
+                if (req_single(source, dest, cnt++))
+                    System.out.println(reachabile.equals("True"));
                 else
-                    System.out.println(arr[2].equals("False"));
+                    System.out.println(reachabile.equals("False"));
+
+                if (req_single(source, dest, cnt++, 2))
+                    System.out.println(tworeachabile.equals("True"));
+                else
+                    System.out.println(tworeachabile.equals("False"));
+
+                if (req_single(source, dest, cnt++, 4))
+                    System.out.println(fourreachabile.equals("True"));
+                else
+                    System.out.println(fourreachabile.equals("False"));
             }
             file.close();
         } catch (java.io.FileNotFoundException e) {
@@ -197,5 +229,6 @@ public class TitanBench {
     	create();
         requests();
         System.out.println("finished. "+total_reqs+" requests took average " + total_time/(1e6*total_reqs) + " each");
+        System.out.println("finished. "+total_2reqs+" n hop requests took average " + total_2time/(1e6*total_2reqs) + " each");
     }
 }

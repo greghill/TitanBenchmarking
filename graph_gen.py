@@ -1,6 +1,6 @@
 import networkx
 import random
-num_nodes = 5000
+num_nodes = 10000
 num_reachability = 100
 g = networkx.fast_gnp_random_graph(num_nodes, .001, 0, True)
 
@@ -22,30 +22,19 @@ for i in range(0, num_reachability):
     while source == sink:
         sink = random.randint(0, num_nodes-1);
 
-    f.write(str(source)+" " + str(sink) + " "+ str(networkx.has_path(g, source, sink)) + '\n')
+    # reachability
+    toWrite = str(source)+" " + str(sink)
+    has_path = networkx.has_path(g, source, sink)
+    toWrite += " "+ str(has_path)
+    # 2 hop paths
+    has_n_hop = False
+    for path in networkx.all_simple_paths(g, source, sink, cutoff=1):
+        has_n_hop = True
+    toWrite += " "+ str(has_n_hop)
+    # 4 hop paths
+    has_n_hop = False
+    for path in networkx.all_simple_paths(g, source, sink, cutoff=2):
+        has_n_hop = True
+    toWrite += " "+ str(has_n_hop)
+    f.write(toWrite + '\n')
 f.close()
-'''
-import random
-f = open('graph2.rec', 'w')
-nodes = 1000
-edges = 100000
-adjList = dict()
-for i in range(0, nodes):
-    adjList[i] = set()
-
-for i in range(0, edges):
-    while True:
-        source = random.randint(0, nodes-1);
-        sink = random.randint(0, nodes-1);
-        if source != sink and sink not in adjList[source]:
-            adjList[source] = adjList[source].union(set([sink]))
-            break
-
-for source, sinks in adjList.iteritems():
-    toPrint = str(source)
-    for nbr in sinks:
-        toPrint += " " + str(nbr)
-
-    f.write(toPrint + '\n')
-f.close()
-'''
