@@ -128,28 +128,38 @@ public class TitanBench {
     }
 
     public static boolean req_single(Integer n1, Integer n2, Integer req) {
+        return req_single(n1, n2, req, -1);
+    }
+
+    public static boolean req_single(Integer n1, Integer n2, Integer req, int hops_left) {
+        //System.out.println("reachability " + n1 + " to " + n2);
         total_reqs++;
         long start = System.nanoTime();
         Object targetId = getVertex(n2).getId();
-        //System.out.println("reachability " + n1 + " to " + n2);
-        ArrayDeque<Vertex> visited = new ArrayDeque<Vertex>();
-        visited.add(getVertex(n1));
-        while (!visited.isEmpty()){
-            Vertex v = visited.remove();
-            if (v.getId().equals(targetId)) {
-                total_time += (System.nanoTime()-start);
-                return true;
-            } else {
-                for (Vertex nbr: v.getVertices(Direction.OUT, "nbr")) {
-                    //System.out.println("at " + v.getId() + " with neighboring vertex " + nbr.getId());
-                    boolean vis = false;
-                    Integer visit = (Integer) nbr.getProperty(VISIT);
-                    if (visit == null || !visit.equals(req)) {
-                        nbr.setProperty(VISIT, req);
-                        visited.add(nbr);
+        ArrayDeque<Vertex> exploringDepth = new ArrayDeque<Vertex>();
+        ArrayDeque<Vertex> nextDepth = new ArrayDeque<Vertex>();
+        exploringDepth.add(getVertex(n1));
+        while (!exploringDepth.isEmpty() && hops_left != 0){
+            while (!exploringDepth.isEmpty()) {
+                Vertex v = exploringDepth.remove();
+                if (v.getId().equals(targetId)) {
+                    total_time += (System.nanoTime()-start);
+                    return true;
+                } else {
+                    for (Vertex nbr: v.getVertices(Direction.OUT, "nbr")) {
+                        //System.out.println("at " + v.getId() + " with neighboring vertex " + nbr.getId());
+                        if (!req.equals( (Integer) nbr.getProperty(VISIT))){
+                            nbr.setProperty(VISIT, req);
+                            nextDepth.add(nbr);
+                        }
                     }
                 }
             }
+            // finished this depth, swap to next one
+            ArrayDeque<Vertex> temp = exploringDepth;
+            exploringDepth = nextDepth;
+            nextDepth = temp;
+            hops_left--;
         }
         total_time += (System.nanoTime()-start);
         return false;
