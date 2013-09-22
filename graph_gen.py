@@ -28,12 +28,12 @@ for i in range(0, num_reachability):
     toWrite += " "+ str(has_path)
     # 2 hop paths
     has_n_hop = False
-    for path in networkx.all_simple_paths(g, source, sink, cutoff=1):
+    for path in networkx.all_simple_paths(g, source, sink, cutoff=2):
         has_n_hop = True
     toWrite += " "+ str(has_n_hop)
     # 4 hop paths
     has_n_hop = False
-    for path in networkx.all_simple_paths(g, source, sink, cutoff=2):
+    for path in networkx.all_simple_paths(g, source, sink, cutoff=4):
         has_n_hop = True
     toWrite += " "+ str(has_n_hop)
     f.write(toWrite + '\n')

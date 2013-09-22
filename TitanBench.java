@@ -83,23 +83,23 @@ public class TitanBench {
                 v.setProperty(ID, Integer.valueOf(arr[0]));
                 nodes.add(v);
                 cnt++;
-                System.out.println("Adding node " + arr[0]);
+                //System.out.println("Adding node " + arr[0]);
             }
             file.close();
             file = new BufferedReader(new FileReader("graph2.rec"));
             cnt = 0;
             while ((line = file.readLine()) != null) {
                 String[] arr = line.split(" ");
-                System.out.print("Adding edges for node " + arr[0] + ":");
+                //System.out.print("Adding edges for node " + arr[0] + ":");
                 for (int i = 1; i < arr.length; i++) {
                     try {
                         nodes.get(cnt).addEdge("nbr", getVertex(Integer.valueOf(arr[i])));
                     } catch (java.lang.IllegalArgumentException e) {
                         continue;
                     }
-                    System.out.print(" " + arr[i]);
+                    //System.out.print(" " + arr[i]);
                 }
-                System.out.print("\nAnd again -- ");
+                //System.out.print("\nAnd again -- ");
                 for (Edge e: getVertex(Integer.valueOf(arr[0])).getEdges(Direction.OUT, "nbr")) {
                     TitanVertex v = (TitanVertex) e.getVertex(Direction.IN);
                     for (TitanProperty p: v.getProperties()) {
