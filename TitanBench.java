@@ -81,7 +81,7 @@ public class TitanBench {
                         else
                             total_time += net;
                         hops++;
-                //        System.out.println("found in " +hops+" hops");
+                        //System.out.println("found in " +hops+" hops");
                         return true;
                     }
                     else if (!req.equals((Integer) nbr.getProperty(VISIT))) {

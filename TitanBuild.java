@@ -119,6 +119,7 @@ public class TitanBuild {
     }
 
     public static void main (String[] args) {
+        System.out.println("making graph now");
     	create();
     }
 }
