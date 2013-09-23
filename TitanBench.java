@@ -26,31 +26,15 @@ public class TitanBench {
     public static long total_time = 0;
     public static long total_2reqs = 0;
     public static long total_2time = 0;
-    public static final String INDEX_NAME = "search";
     public static final String ID = "vertex_id";
     public static final String VISIT = "visit";
-    public static ArrayList<Vertex> nodes;
     public static TitanGraph graph;
 
-    public static void create() {
-    	String directory = "titan_graph";
+    public static void start() {
         BaseConfiguration config = new BaseConfiguration();
-        Configuration storage = config.subset(GraphDatabaseConfiguration.STORAGE_NAMESPACE);
-        // configuring local backend
-        storage.setProperty("storage.backend", "cassandra");
-        storage.setProperty("storage.hostname", "127.0.0.1");
-        storage.setProperty(GraphDatabaseConfiguration.STORAGE_DIRECTORY_KEY, directory);
-        // configuring elastic search index
-        Configuration index = storage.subset(GraphDatabaseConfiguration.INDEX_NAMESPACE).subset(INDEX_NAME);
-        index.setProperty(INDEX_BACKEND_KEY, "elasticsearch");
-        //index.setProperty("local-mode", true);
-        index.setProperty("client-only", false);
-        index.setProperty(STORAGE_DIRECTORY_KEY, directory + File.separator + "es");
-
         config.setProperty("storage.backend", "cassandra");
         config.setProperty("storage.hostname", "127.0.0.1");
         graph = TitanFactory.open(config);
-        TitanBench.load();
     }
 
     public static Vertex getVertex(Integer id) {
@@ -60,66 +44,6 @@ public class TitanBench {
         System.err.println("Vertex " + id + " not found");
         System.exit(-1);
         return graph.addVertex(null);
-    }
-
-    public static void load() {
-
-        BufferedReader file;
-        nodes = new ArrayList<Vertex>();
-        graph.makeType().name(ID).dataType(Integer.class).indexed(Vertex.class).unique(Direction.OUT).makePropertyKey();
-        graph.makeType().name(VISIT).dataType(Integer.class).unique(Direction.OUT).makePropertyKey();
-        graph.makeType().name("nbr").makeEdgeLabel();
-        graph.commit();
-
-        // vertices
-
-        try {
-            file = new BufferedReader(new FileReader("graph2.rec"));
-            String line;
-            int cnt = 0;
-            while ((line = file.readLine()) != null) {
-                String[] arr = line.split(" ");
-                Vertex v = graph.addVertex(null);
-                v.setProperty(ID, Integer.valueOf(arr[0]));
-                nodes.add(v);
-                cnt++;
-                //System.out.println("Adding node " + arr[0]);
-            }
-            file.close();
-            file = new BufferedReader(new FileReader("graph2.rec"));
-            cnt = 0;
-            while ((line = file.readLine()) != null) {
-                String[] arr = line.split(" ");
-                //System.out.print("Adding edges for node " + arr[0] + ":");
-                for (int i = 1; i < arr.length; i++) {
-                    try {
-                        nodes.get(cnt).addEdge("nbr", getVertex(Integer.valueOf(arr[i])));
-                    } catch (java.lang.IllegalArgumentException e) {
-                        continue;
-                    }
-                    //System.out.print(" " + arr[i]);
-                }
-                //System.out.print("\nAnd again -- ");
-                for (Edge e: getVertex(Integer.valueOf(arr[0])).getEdges(Direction.OUT, "nbr")) {
-                    TitanVertex v = (TitanVertex) e.getVertex(Direction.IN);
-                    for (TitanProperty p: v.getProperties()) {
-                        //System.out.print(" " + p.getValue(Integer.class));
-                    }
-                }
-                //System.out.println();
-                cnt++;
-            }
-            file.close();
-        } catch (java.io.FileNotFoundException e) {
-            System.err.println("FileNotFoundException: " + e.getMessage());
-            System.exit(-1);
-        } catch (java.io.IOException e) {
-            System.err.println("Caught IOException: " + e.getMessage());
-            System.exit(-1);
-        }
-
-        // commit the transaction to disk
-        graph.commit();
     }
 
     public static Integer getId(TitanVertex v) {
@@ -226,7 +150,7 @@ public class TitanBench {
     }
     
     public static void main (String[] args) {
-    	create();
+    	start();
         requests();
         System.out.println("finished. "+total_reqs+" requests took average " + total_time/(1e6*total_reqs) + " each");
         System.out.println("finished. "+total_2reqs+" n hop requests took average " + total_2time/(1e6*total_2reqs) + " each");
