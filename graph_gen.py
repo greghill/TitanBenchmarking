@@ -1,8 +1,8 @@
 import networkx
 import random
-num_nodes = 100000
+num_nodes = 10000
 num_reachability = 100
-g = networkx.fast_gnp_random_graph(num_nodes, .0001, 0, True)
+g = networkx.fast_gnp_random_graph(num_nodes, .001, 0, True)
 
 
 # make graph

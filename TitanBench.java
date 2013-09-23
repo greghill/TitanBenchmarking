@@ -26,6 +26,7 @@ public class TitanBench {
     public static long total_time = 0;
     public static long total_2reqs = 0;
     public static long total_2time = 0;
+    public static long[] reqtimes = new long[200];
     public static final String ID = "vertex_id";
     public static final String VISIT = "visit";
     public static TitanGraph graph;
@@ -75,11 +76,13 @@ public class TitanBench {
                 Vertex v = exploringDepth.remove();
                 for (Vertex nbr: v.getVertices(Direction.OUT, "nbr")) {
                     if (nbr.getId().equals(targetId)) { // found target
-                        long net = System.nanoTime()-start;
+                        reqtimes[req] = System.nanoTime()-start;
+                        /*
                         if (max_hops >= 0)
                             total_2time += net;
                         else
                             total_time += net;
+                            */
                         hops++;
                         //System.out.println("found in " +hops+" hops");
                         return true;
@@ -97,11 +100,14 @@ public class TitanBench {
             hops++;
         }
         //System.out.println("not found in " +hops+" hops");
+        reqtimes[req] = System.nanoTime()-start;
+        /*
         long net = System.nanoTime()-start;
         if (max_hops >= 0)
             total_2time += net;
         else
             total_time += net;
+            */
         return false;
     }
 
@@ -119,15 +125,20 @@ public class TitanBench {
                 System.out.println("Processing request " + cnt);
                 Integer source = Integer.valueOf(arr[0]);
                 Integer dest = Integer.valueOf(arr[1]);
+                /*
                 String reachabile = arr[2];
                 String tworeachabile = arr[3];
                 String fourreachabile = arr[4];
-
+                */
+                req_single(source, dest, cnt++);
+                /*
                 if (req_single(source, dest, cnt++))
                     System.out.println(reachabile.equals("True"));
                 else
                     System.out.println(reachabile.equals("False"));
+                    */
 
+/*
                 if (req_single(source, dest, cnt++, 2))
                     System.out.println(tworeachabile.equals("True"));
                 else
@@ -137,6 +148,7 @@ public class TitanBench {
                     System.out.println(fourreachabile.equals("True"));
                 else
                     System.out.println(fourreachabile.equals("False"));
+                    */
             }
             file.close();
         } catch (java.io.FileNotFoundException e) {
@@ -148,11 +160,24 @@ public class TitanBench {
         }
 
     }
+    public static void writeTimes(){
+        try {
+            BufferedWriter writer = new BufferedWriter(new FileWriter("results.txt"));
+            for ( int i = 0; i < reqtimes.length; i++)
+            {      
+                writer.write(reqtimes[i]/1e6 + " \n");
+            }
+            writer.close();
+        } catch(IOException ex) {
+            ex.printStackTrace();
+        }
+    }
     
     public static void main (String[] args) {
     	start();
         requests();
-        System.out.println("finished. "+total_reqs+" requests took average " + total_time/(1e6*total_reqs) + " each");
-        System.out.println("finished. "+total_2reqs+" n hop requests took average " + total_2time/(1e6*total_2reqs) + " each");
+//        System.out.println("finished. "+total_reqs+" requests took average " + total_time/(1e6*total_reqs) + " each");
+        //System.out.println("finished. "+total_2reqs+" n hop requests took average " + total_2time/(1e6*total_2reqs) + " each");
+        writeTimes();
     }
 }
