@@ -32,8 +32,8 @@ public class TitanBench {
 
     public static void start() {
         BaseConfiguration config = new BaseConfiguration();
-        config.setProperty("storage.backend", "cassandra");
-        config.setProperty("storage.hostname", "127.0.0.1");
+        config.setProperty("storage.backend", "cassandrathrift");
+        config.setProperty("storage.hostname", "127.0.0.1");//"128.84.227.111");
         graph = TitanFactory.open(config);
     }
 

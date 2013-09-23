@@ -33,8 +33,8 @@ public class TitanBuild {
         BaseConfiguration config = new BaseConfiguration();
         Configuration storage = config.subset(GraphDatabaseConfiguration.STORAGE_NAMESPACE);
         // configuring local backend
-        storage.setProperty("storage.backend", "cassandra");
-        storage.setProperty("storage.hostname", "127.0.0.1");
+        storage.setProperty("storage.backend", "cassandrathrift");
+        storage.setProperty("storage.hostname", "127.0.0.1");//"128.84.227.111");
         storage.setProperty(GraphDatabaseConfiguration.STORAGE_DIRECTORY_KEY, directory);
         // configuring elastic search index
         Configuration index = storage.subset(GraphDatabaseConfiguration.INDEX_NAMESPACE).subset(INDEX_NAME);
@@ -43,7 +43,7 @@ public class TitanBuild {
         index.setProperty("client-only", false);
         index.setProperty(STORAGE_DIRECTORY_KEY, directory + File.separator + "es");
 
-        config.setProperty("storage.backend", "cassandra");
+        config.setProperty("storage.backend", "cassandrathrift");
         config.setProperty("storage.hostname", "127.0.0.1");
         graph = TitanFactory.open(config);
         TitanBuild.load();
