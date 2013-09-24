@@ -24,16 +24,21 @@ import static com.thinkaurelius.titan.graphdb.configuration.GraphDatabaseConfigu
 
 public class TitanThroughput implements Runnable {
 
+    public static final int OPS_PER_CLIENT = 10000;
+    public static final int PERCENT_READS = 90;
     public static final int NUM_CLIENTS = 10;
     public static final String ID = "vertex_id";
     public static final String VISIT = "visit";
+    public static double[][] stats = new long[OPS_PER_CLIENT][NUM_CLIENTS];
     TitanGraph graph;
+    public final int proc;
 
-    public TitanThroughput() {
+    public TitanThroughput(int proc) {
         BaseConfiguration config = new BaseConfiguration();
         config.setProperty("storage.backend", "cassandrathrift");
         config.setProperty("storage.hostname", "127.0.0.1");
         graph = TitanFactory.open(config);
+        proc = proc;
     }
 
     public Vertex getVertex(Integer id) {
@@ -80,25 +85,41 @@ public class TitanThroughput implements Runnable {
     }
 
     public void run() {
-        int node = getNewNodeId();
-        ArrayList<Integer> out_neighbors = getNeighbors();
-        ArrayList<Integer> in_neighbors = getNeighbors();
-        Vertex v = graph.addVertex(null);
-        v.setProperty(ID, node);
-        for (Integer nbr : out_nbrs)
-            v.addEdge("nbr", getVertex(nbr));
-        for (Integer nbr : in_nbrs)
-            getVertex(nbr).addEdge("nbr", v);
-        graph.commit();
-
-        node = getRandomNode();
-        getTwoNeighbors(getVertex(node));
+        int num_ops = 0;
+        while (num_ops < OPS_PER_CLIENT) {
+            // do reads
+            for (int j = 0; j < PERCENT_READS; j++) {
+                int node = getNewNodeId();
+                ArrayList<Integer> out_nbrs = getNeighbors();
+                ArrayList<Integer> in_nbrs = getNeighbors();
+                long start = System.nanoTime();
+                Vertex v = graph.addVertex(null);
+                v.setProperty(ID, node);
+                for (Integer nbr : out_nbrs)
+                    v.addEdge("nbr", getVertex(nbr));
+                for (Integer nbr : in_nbrs)
+                    getVertex(nbr).addEdge("nbr", v);
+                graph.commit();
+                long end = System.nanoTime();
+                stats[num_ops][proc] = (end-start) / 1e6;
+                num_ops++;
+            }
+            // do writes
+            for (int j = 0; j < 100-PERCENT_READS; j++) {
+                Vertex node = getRandomNode();
+                long start = System.nanoTime();
+                getTwoNeighbors(getVertex(node));
+                long end = System.nanoTime();
+                stats[num_ops][proc] = (end-start) / 1e6;
+                num_ops++;
+            }
+        }
     }
     
     public static void main (String[] args) {
         ArrayList<Thread> threads = new ArrayList<Thread>(NUM_CLIENTS);
         for (int i = 0; i < NUM_CLIENTS; i++) {
-            threads.add(i, new Thread(new TitanThroughput()));
+            threads.add(i, new Thread(new TitanThroughput(i)));
             threads.get(i).run();
         }
         try {
