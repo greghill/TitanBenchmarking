@@ -14,6 +14,7 @@ import org.apache.commons.configuration.Configuration;
 
 import java.io.*;
 import java.util.Collection;
+import java.util.Random;
 import java.util.ArrayList;
 import java.util.ArrayDeque;
 import java.lang.Thread;
@@ -24,6 +25,9 @@ import static com.thinkaurelius.titan.graphdb.configuration.GraphDatabaseConfigu
 
 public class TitanThroughput implements Runnable {
 
+    public static int node_id = 1;
+    public static final Random rand = new Random();
+    public static ArrayList<Integer> vertex_ids;
     public static final int OPS_PER_CLIENT = 10000;
     public static final int PERCENT_READS = 90;
     public static final int NUM_CLIENTS = 10;
@@ -39,7 +43,7 @@ public class TitanThroughput implements Runnable {
         config.setProperty("storage.backend", "cassandrathrift");
         config.setProperty("storage.hostname", "127.0.0.1");
         graph = TitanFactory.open(config);
-        proc = proc;
+        this.proc = proc;
     }
 
     public Vertex getVertex(Integer id) {
@@ -70,7 +74,7 @@ public class TitanThroughput implements Runnable {
         return toRet;
     }
 
-    public void writeTimes(){
+    public void writeTimes() {
         /*
         try {
             BufferedWriter writer = new BufferedWriter(new FileWriter("results.txt"));
@@ -85,8 +89,29 @@ public class TitanThroughput implements Runnable {
         */
     }
 
-    public ArrayList<Integer> getRandomNodes(int num) {
+    public static synchronized int getNewNodeId() {
+        return node_id++;
+    }
 
+    public static synchronized void addNewNoded(int id) {
+        vertex_ids.add(id);
+    }
+
+    public static synchronized ArrayList<Integer> getRandomNodes(int size) {
+        ArrayList<Integer> toRet = new ArrayList<Integer>(size);
+        ArrayList<Integer> idxs = new ArrayList<Integer>(size);
+        if (vertex_ids.size() < size) {
+            return null;
+        }
+        while (idxs.size() < size) {
+            Integer toAdd = rand.nextInt(vertex_ids.size());
+            if (!idxs.contains(toAdd))
+                idxs.add(toAdd);
+        }
+        for(Integer i : idxs)
+            toRet.add(vertex_ids.get(i));
+
+        return toRet;
     }
 
     public void run() {
@@ -94,9 +119,9 @@ public class TitanThroughput implements Runnable {
         while (num_ops < OPS_PER_CLIENT) {
             // do reads
             for (int j = 0; j < PERCENT_READS; j++) {
-                int node = getNewNodeId();
-                ArrayList<Integer> out_nbrs = getRandomNodes(NUM_NEW_EDGES/2);
-                ArrayList<Integer> in_nbrs = getRandomNodes(NUM_NEW_EDGES/2);
+                int node = TitanThroughput.getNewNodeId();
+                ArrayList<Integer> out_nbrs = TitanThroughput.getRandomNodes(NUM_NEW_EDGES/2);
+                ArrayList<Integer> in_nbrs = TitanThroughput.getRandomNodes(NUM_NEW_EDGES/2);
                 long start = System.nanoTime();
                 Vertex v = graph.addVertex(null);
                 v.setProperty(ID, node);
@@ -108,11 +133,12 @@ public class TitanThroughput implements Runnable {
                 long end = System.nanoTime();
                 stats[num_ops][proc] = (end-start) / 1e6;
                 num_ops++;
+                TitanThroughput.addNewNode(node);
             }
             // do writes
             for (int j = 0; j < 100-PERCENT_READS; j++) {
                 long start = System.nanoTime();
-                getTwoNeighbors(getRandomNodes(1).get(0));
+                getTwoNeighbors(TitanThroughput.getRandomNodes(1).get(0));
                 long end = System.nanoTime();
                 stats[num_ops][proc] = (end-start) / 1e6;
                 num_ops++;
