@@ -82,7 +82,7 @@ public class TitanBuild {
                 cnt++;
                 if (cnt % BATCH_SIZE == 0) {
                     System.out.println("Adding node " + cnt);
-                    graph.commit()
+                    graph.commit();
                 }
                 //System.out.println("Adding node " + arr[0]);
             }
@@ -111,7 +111,7 @@ public class TitanBuild {
                 cnt++;
                 if (cnt % BATCH_SIZE == 0) {
                     System.out.println("Adding edges for node " + cnt);
-                    graph.commit()
+                    graph.commit();
                 }
             }
             file.close();
