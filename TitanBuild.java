@@ -22,7 +22,8 @@ import static com.thinkaurelius.titan.graphdb.configuration.GraphDatabaseConfigu
 
 public class TitanBuild {
 
-    public static int BATCH_SIZE = 100;
+    public static int NODE_BATCH_SIZE = 100;
+    public static int EDGE_BATCH_SIZE = 10;
     public static final String INDEX_NAME = "search";
     public static final String ID = "vertex_id";
     public static final String VISIT = "visit";
@@ -80,7 +81,7 @@ public class TitanBuild {
                 v.setProperty(ID, Integer.valueOf(arr[0]));
                 nodes.add(v);
                 cnt++;
-                if (cnt % BATCH_SIZE == 0) {
+                if (cnt % NODE_BATCH_SIZE == 0) {
                     System.out.println("Adding node " + cnt);
                     graph.commit();
                 }
@@ -109,10 +110,10 @@ public class TitanBuild {
                 }
                 //System.out.println();
                 cnt++;
-                //if (cnt % BATCH_SIZE == 0) {
+                if (cnt % EDGE_BATCH_SIZE == 0) {
                     System.out.println("Adding edges for node " + cnt);
                     graph.commit();
-                //}
+                }
             }
             file.close();
         } catch (java.io.FileNotFoundException e) {
