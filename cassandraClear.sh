@@ -1,1 +1,1 @@
-rm -rf /var/lib/cassandra/data/ /var/lib/cassandra/commitlog/
+rm -rf /tmp/cassandra/
