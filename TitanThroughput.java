@@ -136,7 +136,7 @@ public class TitanThroughput implements Runnable {
                 int node = TitanThroughput.getNewNodeId();
                 ArrayList<Integer> out_nbrs = TitanThroughput.getRandomNodes(NUM_NEW_EDGES/2);
                 ArrayList<Integer> in_nbrs = TitanThroughput.getRandomNodes(NUM_NEW_EDGES/2);
-                System.out.println("node " + node + " with nieghbors " + out_nbrs + " and " + in_nbrs);
+                //System.out.println("node " + node + " with nieghbors " + out_nbrs + " and " + in_nbrs);
                 long start = System.nanoTime();
                 Vertex v = graph.addVertex(null);
                 v.setProperty(ID, node);

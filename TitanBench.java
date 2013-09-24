@@ -76,6 +76,7 @@ public class TitanBench {
                 Vertex v = exploringDepth.remove();
                 for (Vertex nbr: v.getVertices(Direction.OUT, "nbr")) {
                     if (nbr.getId().equals(targetId)) { // found target
+                        graph.commit();
                         reqtimes[req] = System.nanoTime()-start;
                         hops++;
                         //System.out.println("found in " +hops+" hops");
@@ -94,6 +95,7 @@ public class TitanBench {
             hops++;
         }
         //System.out.println("not found in " +hops+" hops");
+        graph.commit();
         reqtimes[req] = System.nanoTime()-start;
         return false;
     }
