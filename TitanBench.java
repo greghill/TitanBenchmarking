@@ -77,12 +77,6 @@ public class TitanBench {
                 for (Vertex nbr: v.getVertices(Direction.OUT, "nbr")) {
                     if (nbr.getId().equals(targetId)) { // found target
                         reqtimes[req] = System.nanoTime()-start;
-                        /*
-                        if (max_hops >= 0)
-                            total_2time += net;
-                        else
-                            total_time += net;
-                            */
                         hops++;
                         //System.out.println("found in " +hops+" hops");
                         return true;
@@ -101,13 +95,6 @@ public class TitanBench {
         }
         //System.out.println("not found in " +hops+" hops");
         reqtimes[req] = System.nanoTime()-start;
-        /*
-        long net = System.nanoTime()-start;
-        if (max_hops >= 0)
-            total_2time += net;
-        else
-            total_time += net;
-            */
         return false;
     }
 
