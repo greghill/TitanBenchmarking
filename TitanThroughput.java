@@ -27,9 +27,10 @@ public class TitanThroughput implements Runnable {
     public static final int OPS_PER_CLIENT = 10000;
     public static final int PERCENT_READS = 90;
     public static final int NUM_CLIENTS = 10;
+    public static final int NUM_NEW_EDGES = 10;
     public static final String ID = "vertex_id";
     public static final String VISIT = "visit";
-    public static double[][] stats = new long[OPS_PER_CLIENT][NUM_CLIENTS];
+    public static double[][] stats = new double[OPS_PER_CLIENT][NUM_CLIENTS];
     TitanGraph graph;
     public final int proc;
 
@@ -57,10 +58,10 @@ public class TitanThroughput implements Runnable {
         return null;
     }
 
-    public Collection<Vertex> getTwoNeighbors(Vertex start) {
+    public Collection<Vertex> getTwoNeighbors(int start) {
         ArrayList<Vertex> friends = new ArrayList<Vertex>();
         ArrayList<Vertex> toRet = new ArrayList<Vertex>();
-        for (Vertex nbr: start.getVertices(Direction.OUT, "nbr"))
+        for (Vertex nbr: getVertex(start).getVertices(Direction.OUT, "nbr"))
             friends.add(nbr);
         for (Vertex friend : friends) {
             for (Vertex fof : friend.getVertices(Direction.OUT, "nbr"))
@@ -84,14 +85,18 @@ public class TitanThroughput implements Runnable {
         */
     }
 
+    public ArrayList<Integer> getRandomNodes(int num) {
+
+    }
+
     public void run() {
         int num_ops = 0;
         while (num_ops < OPS_PER_CLIENT) {
             // do reads
             for (int j = 0; j < PERCENT_READS; j++) {
                 int node = getNewNodeId();
-                ArrayList<Integer> out_nbrs = getNeighbors();
-                ArrayList<Integer> in_nbrs = getNeighbors();
+                ArrayList<Integer> out_nbrs = getRandomNodes(NUM_NEW_EDGES/2);
+                ArrayList<Integer> in_nbrs = getRandomNodes(NUM_NEW_EDGES/2);
                 long start = System.nanoTime();
                 Vertex v = graph.addVertex(null);
                 v.setProperty(ID, node);
@@ -106,9 +111,8 @@ public class TitanThroughput implements Runnable {
             }
             // do writes
             for (int j = 0; j < 100-PERCENT_READS; j++) {
-                Vertex node = getRandomNode();
                 long start = System.nanoTime();
-                getTwoNeighbors(getVertex(node));
+                getTwoNeighbors(getRandomNodes(1).get(0));
                 long end = System.nanoTime();
                 stats[num_ops][proc] = (end-start) / 1e6;
                 num_ops++;
