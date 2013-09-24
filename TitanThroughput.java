@@ -27,7 +27,7 @@ public class TitanThroughput implements Runnable {
     public static int node_id = 1;
     public static final Random rand = new Random();
     public static final int OPS_PER_CLIENT = 10000;
-    public static final int PERCENT_READS = 90;
+    public static final int PERCENT_READS = 0;
     public static final int NUM_CLIENTS = 10;
     public static final int NUM_NEW_EDGES = 10;
     public static final String INDEX_NAME = "search";
@@ -90,6 +90,7 @@ public class TitanThroughput implements Runnable {
     }
 
     public ArrayList<Vertex> getTwoNeighbors(int start) {
+        System.out.println("two neighbors CURRENTLY BROKEN");
         ArrayList<Vertex> friends = new ArrayList<Vertex>();
         ArrayList<Vertex> toRet = new ArrayList<Vertex>();
         for (Vertex nbr: getVertex(start).getVertices(Direction.OUT, "nbr"))
@@ -99,21 +100,6 @@ public class TitanThroughput implements Runnable {
                 toRet.add(fof);
         }
         return toRet;
-    }
-
-    public void writeTimes() {
-        /*
-        try {
-            BufferedWriter writer = new BufferedWriter(new FileWriter("results.txt"));
-            for ( int i = 0; i < reqtimes.length; i++)
-            {      
-                writer.write(reqtimes[i]/1e6 + " \n");
-            }
-            writer.close();
-        } catch(IOException ex) {
-            ex.printStackTrace();
-        }
-        */
     }
 
     public static synchronized int getNewNodeId() {
@@ -150,6 +136,7 @@ public class TitanThroughput implements Runnable {
                 int node = TitanThroughput.getNewNodeId();
                 ArrayList<Integer> out_nbrs = TitanThroughput.getRandomNodes(NUM_NEW_EDGES/2);
                 ArrayList<Integer> in_nbrs = TitanThroughput.getRandomNodes(NUM_NEW_EDGES/2);
+                System.out.println("node " + node + " with nieghbors " + out_nbrs + " and " + in_nbrs);
                 long start = System.nanoTime();
                 Vertex v = graph.addVertex(null);
                 v.setProperty(ID, node);
@@ -175,10 +162,24 @@ public class TitanThroughput implements Runnable {
                 for (Vertex v : fof) {
                     toPrint += " " + v.getId();
                 }
+                System.out.println(toPrint);
             }
         }
     }
-    
+
+    public static void writeTimes() {
+        try {
+            BufferedWriter writer = new BufferedWriter(new FileWriter("throughputresults.txt"));
+            for (double[] outer : stats) {
+                for (double d : outer)
+                    writer.write(d + " \n");
+            }
+            writer.close();
+        } catch(IOException ex) {
+            ex.printStackTrace();
+        }
+    }
+
     public static void main (String[] args) {
         ArrayList<Thread> threads = new ArrayList<Thread>(NUM_CLIENTS);
         for (int i = 0; i < NUM_CLIENTS; i++) {
@@ -193,5 +194,6 @@ public class TitanThroughput implements Runnable {
         } catch(Exception e) {
             e.printStackTrace();
         }
+        writeTimes();
     }
 }
