@@ -33,7 +33,7 @@ public class TitanThroughput implements Runnable {
     public static final String INDEX_NAME = "search";
     public static final String ID = "vertex_id";
     public static final String VISIT = "visit";
-    public static double[][] stats = new double[OPS_PER_CLIENT][NUM_CLIENTS];
+    public static double[] stats = new double[NUM_CLIENTS];
     public static ArrayList<Integer> vertex_ids = new ArrayList<Integer>(OPS_PER_CLIENT*(100-PERCENT_READS)*(NUM_NEW_EDGES+1)/100);
     TitanGraph graph;
     public final int proc;
@@ -129,6 +129,7 @@ public class TitanThroughput implements Runnable {
 
     public void run() {
         int num_ops = 0;
+        long start = System.nanoTime();
         while (num_ops < OPS_PER_CLIENT) {
             System.out.println("proc " + proc + " done " + num_ops + " ops");
             // do writes
@@ -137,7 +138,6 @@ public class TitanThroughput implements Runnable {
                 ArrayList<Integer> out_nbrs = TitanThroughput.getRandomNodes(NUM_NEW_EDGES/2);
                 ArrayList<Integer> in_nbrs = TitanThroughput.getRandomNodes(NUM_NEW_EDGES/2);
                 //System.out.println("node " + node + " with nieghbors " + out_nbrs + " and " + in_nbrs);
-                long start = System.nanoTime();
                 Vertex v = graph.addVertex(null);
                 v.setProperty(ID, node);
                 for (Integer nbr : out_nbrs)
@@ -145,8 +145,6 @@ public class TitanThroughput implements Runnable {
                 for (Integer nbr : in_nbrs)
                     getVertex(nbr).addEdge("nbr", v);
                 graph.commit();
-                long end = System.nanoTime();
-                stats[num_ops][proc] = (end-start) / 1e6;
                 num_ops++;
                 TitanThroughput.addNewNode(node);
             }
@@ -154,10 +152,7 @@ public class TitanThroughput implements Runnable {
             for (int j = 0; j < PERCENT_READS; j++) {
                 int source = TitanThroughput.getRandomNodes(1).get(0);
                 String toPrint = "neighbors of " + source + " are:";
-                long start = System.nanoTime();
                 ArrayList<Vertex> fof = getTwoNeighbors(source);
-                long end = System.nanoTime();
-                stats[num_ops][proc] = (end-start) / 1e6;
                 num_ops++;
                 for (Vertex v : fof) {
                     toPrint += " " + v.getId();
@@ -165,14 +160,15 @@ public class TitanThroughput implements Runnable {
                 System.out.println(toPrint);
             }
         }
+        long end = System.nanoTime();
+        stats[proc] = (end-start) / 1e6;
     }
 
     public static void writeTimes() {
         try {
             BufferedWriter writer = new BufferedWriter(new FileWriter("throughputresults.txt"));
-            for (double[] outer : stats) {
-                for (double d : outer)
-                    writer.write(d + " \n");
+            for (double d : stats) {
+                writer.write(d + " \n");
             }
             writer.close();
         } catch(IOException ex) {
