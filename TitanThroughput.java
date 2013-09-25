@@ -27,7 +27,7 @@ public class TitanThroughput implements Runnable {
     public static int node_id = 1;
     public static final Random rand = new Random();
     public static final int OPS_PER_CLIENT = 10000;
-    public static final int PERCENT_READS = 10;
+    public static final int PERCENT_READS = 90;
     public static final int NUM_CLIENTS = 10;
     public static final int NUM_NEW_EDGES = 10;
     public static final String INDEX_NAME = "search";
