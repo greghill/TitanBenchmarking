@@ -27,7 +27,7 @@ public class TitanThroughput implements Runnable {
     public static int node_id = 1;
     public static final Random rand = new Random();
     public static final int OPS_PER_CLIENT = 10000;
-    public static final int PERCENT_READS = 0;
+    public static final int PERCENT_READS = 10;
     public static final int NUM_CLIENTS = 10;
     public static final int NUM_NEW_EDGES = 10;
     public static final String INDEX_NAME = "search";
@@ -47,11 +47,13 @@ public class TitanThroughput implements Runnable {
             storage.setProperty("storage.backend", "cassandrathrift");
             storage.setProperty("storage.hostname", "127.0.0.1");//"128.84.227.111");
             storage.setProperty(GraphDatabaseConfiguration.STORAGE_DIRECTORY_KEY, directory);
+            /*
             // configuring elastic search index
             Configuration index = storage.subset(GraphDatabaseConfiguration.INDEX_NAMESPACE).subset(INDEX_NAME);
             index.setProperty(INDEX_BACKEND_KEY, "elasticsearch");
             index.setProperty("client-only", false);
             index.setProperty(STORAGE_DIRECTORY_KEY, directory + File.separator + "es");
+            */
         }
         config.setProperty("storage.backend", "cassandrathrift");
         config.setProperty("storage.hostname", "127.0.0.1");
@@ -90,14 +92,12 @@ public class TitanThroughput implements Runnable {
     }
 
     public ArrayList<Vertex> getTwoNeighbors(int start) {
-        System.out.println("two neighbors CURRENTLY BROKEN");
         ArrayList<Vertex> friends = new ArrayList<Vertex>();
         ArrayList<Vertex> toRet = new ArrayList<Vertex>();
-        for (Vertex nbr: getVertex(start).getVertices(Direction.OUT, "nbr"))
-            friends.add(nbr);
-        for (Vertex friend : friends) {
-            for (Vertex fof : friend.getVertices(Direction.OUT, "nbr"))
+        for (Vertex nbr: getVertex(start).getVertices(Direction.OUT, "nbr")) {
+            for (Vertex fof : nbr.getVertices(Direction.OUT, "nbr")) {
                 toRet.add(fof);
+            }
         }
         return toRet;
     }
@@ -151,13 +151,16 @@ public class TitanThroughput implements Runnable {
             // do reads
             for (int j = 0; j < PERCENT_READS; j++) {
                 int source = TitanThroughput.getRandomNodes(1).get(0);
-                String toPrint = "neighbors of " + source + " are:";
+                //String toPrint = "neighbors of " + source + " are:";
                 ArrayList<Vertex> fof = getTwoNeighbors(source);
+                graph.commit();
                 num_ops++;
+                /*
                 for (Vertex v : fof) {
                     toPrint += " " + v.getId();
                 }
                 System.out.println(toPrint);
+                */
             }
         }
         long end = System.nanoTime();
