@@ -26,7 +26,7 @@ public class TitanThroughput implements Runnable {
 
     public static int node_id = 1;
     public static final Random rand = new Random();
-    public static final int OPS_PER_CLIENT = 10000;
+    public static final int OPS_PER_CLIENT = 1000;
     public static final int PERCENT_READS = 90;
     public static final int NUM_CLIENTS = 10;
     public static final int NUM_NEW_EDGES = 10;
@@ -170,9 +170,13 @@ public class TitanThroughput implements Runnable {
     public static void writeTimes() {
         try {
             BufferedWriter writer = new BufferedWriter(new FileWriter("throughputresults.txt"));
+            double op_mult = (PERCENT_READS + (100-PERCENT_READS)*(1+NUM_NEW_EDGES)) /100.;
+            double div = op_mult * NUM_CLIENTS * OPS_PER_CLIENT;
+            double toRet = 0;
             for (double d : stats) {
-                writer.write(d + " \n");
+                toRet += (d/div);
             }
+            writer.write(toRet + " \n");
             writer.close();
         } catch(IOException ex) {
             ex.printStackTrace();
