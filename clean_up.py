@@ -1,5 +1,5 @@
 import re
-f = open('graph.rec', 'r')
+f = open('graph2.rec', 'r')
 set1 = set()
 set2 = set()
 for line in f:
