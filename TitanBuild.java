@@ -23,7 +23,7 @@ import static com.thinkaurelius.titan.graphdb.configuration.GraphDatabaseConfigu
 public class TitanBuild {
 
     public static int NODE_BATCH_SIZE = 100;
-    public static int EDGE_BATCH_SIZE = 10;
+    public static int EDGE_BATCH_SIZE = 1;
     public static final String INDEX_NAME = "search";
     public static final String ID = "vertex_id";
     public static final String VISIT = "visit";
