@@ -15,6 +15,7 @@ import org.apache.commons.configuration.Configuration;
 import java.io.*;
 import java.util.Random;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.ArrayDeque;
 import java.lang.Thread;
 
@@ -91,10 +92,10 @@ public class TitanThroughput implements Runnable {
         return null;
     }
 
-    public ArrayList<Vertex> getTwoNeighbors(int start) {
-        ArrayList<Vertex> friends = new ArrayList<Vertex>();
-        ArrayList<Vertex> toRet = new ArrayList<Vertex>();
+    public HashSet<Vertex> getTwoNeighbors(int start) {
+        HashSet<Vertex> toRet = new HashSet<Vertex>();
         for (Vertex nbr: getVertex(start).getVertices(Direction.OUT, "nbr")) {
+            toRet.add(nbr);
             for (Vertex fof : nbr.getVertices(Direction.OUT, "nbr")) {
                 toRet.add(fof);
             }
@@ -152,7 +153,7 @@ public class TitanThroughput implements Runnable {
             for (int j = 0; j < PERCENT_READS; j++) {
                 int source = TitanThroughput.getRandomNodes(1).get(0);
                 //String toPrint = "neighbors of " + source + " are:";
-                ArrayList<Vertex> fof = getTwoNeighbors(source);
+                getTwoNeighbors(source);
                 graph.commit();
                 num_ops++;
                 /*
@@ -174,9 +175,9 @@ public class TitanThroughput implements Runnable {
             double div = op_mult * NUM_CLIENTS * OPS_PER_CLIENT;
             double toRet = 0;
             for (double d : stats) {
-                toRet += (d/div);
+                toRet += d;
             }
-            writer.write(toRet + " \n");
+            writer.write(toRet/div + " \n");
             writer.close();
         } catch(IOException ex) {
             ex.printStackTrace();
