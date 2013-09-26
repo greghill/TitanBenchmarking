@@ -27,7 +27,7 @@ public class TitanThroughput implements Runnable {
 
     public static int node_id = 1;
     public static final Random rand = new Random();
-    public static final int OPS_PER_CLIENT = 1000;
+    public static final int OPS_PER_CLIENT = 10000;
     public static final int PERCENT_READS = 50;
     public static final int NUM_CLIENTS = 5;
     public static final int NUM_NEW_EDGES = 2;
@@ -207,9 +207,8 @@ public class TitanThroughput implements Runnable {
                 System.out.println("finished " + i);
             }
             long end = System.nanoTime();
-            System.out.println("took sum " + (end-start)/1e6 + " milliseconds");
             double div = NUM_CLIENTS * OPS_PER_CLIENT;
-            System.out.println("or " + (end-start)/(div * 1e6) + " milliseconds");
+            System.out.println("took " + (end-start)/1e6 + " milliseconds or " + (end-start)/(div * 1e6) + " milliseconds per op");
         } catch(Exception e) {
             e.printStackTrace();
         }
