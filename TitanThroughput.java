@@ -43,6 +43,7 @@ public class TitanThroughput implements Runnable {
     public TitanThroughput(int proc) {
     	String directory = "titan_graph";
         BaseConfiguration config = new BaseConfiguration();
+        /*
         if (proc == 0) {
             Configuration storage = config.subset(GraphDatabaseConfiguration.STORAGE_NAMESPACE);
             // configuring local backend
@@ -56,12 +57,13 @@ public class TitanThroughput implements Runnable {
             index.setProperty("client-only", false);
             index.setProperty(STORAGE_DIRECTORY_KEY, directory + File.separator + "es");
             */
-        }
+        //}
         config.setProperty("storage.backend", "cassandrathrift");
         config.setProperty("storage.hostname", "127.0.0.1");
         graph = TitanFactory.open(config);
         this.proc = proc;
         System.out.println("proc " + proc + " created");
+        /*
         if (proc == 0) { // first proc add some nodes
             graph.makeType().name(ID).dataType(Integer.class).indexed(Vertex.class).unique(Direction.OUT).makePropertyKey();
             graph.makeType().name(VISIT).dataType(Integer.class).unique(Direction.OUT).makePropertyKey();
@@ -74,6 +76,7 @@ public class TitanThroughput implements Runnable {
             }
             graph.commit();
         }
+        */
     }
 
     public Vertex getVertex(Integer id) {
