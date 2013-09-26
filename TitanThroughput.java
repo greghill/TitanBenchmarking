@@ -28,14 +28,13 @@ public class TitanThroughput implements Runnable {
     public static int node_id = 1;
     public static final Random rand = new Random();
     public static final int OPS_PER_CLIENT = 1000;
-    public static final int PERCENT_READS = 90;
-    public static final int NUM_CLIENTS = 10;
-    public static final int NUM_NEW_EDGES = 10;
+    public static final int PERCENT_READS = 50;
+    public static final int NUM_CLIENTS = 5;
+    public static final int NUM_NEW_EDGES = 2;
     public static final String INDEX_NAME = "search";
     public static final String ID = "vertex_id";
     public static final String VISIT = "visit";
-    public static double[] stats = new double[NUM_CLIENTS];
-    public static ArrayList<Integer> vertex_ids = new ArrayList<Integer>(OPS_PER_CLIENT*(100-PERCENT_READS)*(NUM_NEW_EDGES+1)/100);
+    public static ArrayList<Integer> vertex_ids = new ArrayList<Integer>();//OPS_PER_CLIENT*(100-PERCENT_READS)*(NUM_NEW_EDGES+1)/100);
     TitanGraph graph;
     public final int proc;
 
@@ -161,12 +160,12 @@ public class TitanThroughput implements Runnable {
         for(Integer i : idxs)
             toRet.add(vertex_ids.get(i));
 
+        //System.out.println(" got idxs " + idxs + " for nodes " + toRet);
         return toRet;
     }
 
     public void run() {
         int num_ops = 0;
-        long start = System.nanoTime();
         while (num_ops < OPS_PER_CLIENT) {
             System.out.println("proc " + proc + " done " + num_ops + " ops");
             // do writes
@@ -188,32 +187,16 @@ public class TitanThroughput implements Runnable {
             // do reads
             for (int j = 0; j < PERCENT_READS; j++) {
                 ArrayList<Integer> sourcedest =  TitanThroughput.getRandomNodes(2);
-                req_single(sourcedest.get(0), sourcedest.get(1), num_ops, 2); // calls rollback on transactio for us
+                boolean r = req_single(sourcedest.get(0), sourcedest.get(1), num_ops, 2); // calls rollback on transactio for us
+            //    System.out.println("two hop reachability from  " + sourcedest.get(0)+ " to " + sourcedest.get(1) + " has reachable " + r);
                 num_ops++;
             }
-        }
-        long end = System.nanoTime();
-        stats[proc] = (end-start) / 1e6;
-    }
-
-    public static void writeTimes() {
-        try {
-            BufferedWriter writer = new BufferedWriter(new FileWriter("throughputresults.txt"));
-            double op_mult = (PERCENT_READS + (100-PERCENT_READS)*(1+NUM_NEW_EDGES)) /100.;
-            double div = op_mult * NUM_CLIENTS * OPS_PER_CLIENT;
-            double toRet = 0;
-            for (double d : stats) {
-                toRet += d;
-            }
-            writer.write(toRet/div + " \n");
-            writer.close();
-        } catch(IOException ex) {
-            ex.printStackTrace();
         }
     }
 
     public static void main (String[] args) {
         ArrayList<Thread> threads = new ArrayList<Thread>(NUM_CLIENTS);
+        long start = System.nanoTime();
         for (int i = 0; i < NUM_CLIENTS; i++) {
             threads.add(i, new Thread(new TitanThroughput(i)));
             threads.get(i).start();
@@ -223,9 +206,12 @@ public class TitanThroughput implements Runnable {
                 threads.get(i).join();
                 System.out.println("finished " + i);
             }
+            long end = System.nanoTime();
+            System.out.println("took sum " + (end-start)/1e6 + " milliseconds");
+            double div = NUM_CLIENTS * OPS_PER_CLIENT;
+            System.out.println("or " + (end-start)/(div * 1e6) + " milliseconds");
         } catch(Exception e) {
             e.printStackTrace();
         }
-        writeTimes();
     }
 }
