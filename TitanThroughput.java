@@ -25,8 +25,8 @@ import static com.thinkaurelius.titan.graphdb.configuration.GraphDatabaseConfigu
 
 public class TitanThroughput implements Runnable {
 
-    public static int node_id = 1;
     public static final Random rand = new Random();
+    public static final int EXISTING_GRAPH_SIZE = 10000;
     public static final int OPS_PER_CLIENT = 1000;
     public static final int PERCENT_READS = 50;
     public static final int NUM_CLIENTS = 5;
@@ -34,7 +34,9 @@ public class TitanThroughput implements Runnable {
     public static final String INDEX_NAME = "search";
     public static final String ID = "vertex_id";
     public static final String VISIT = "visit";
-    public static ArrayList<Integer> vertex_ids = new ArrayList<Integer>();//OPS_PER_CLIENT*(100-PERCENT_READS)*(NUM_NEW_EDGES+1)/100);
+
+    public static int node_id = EXISTING_GRAPH_SIZE + 1;
+    //public static ArrayList<Integer> vertex_ids = new ArrayList<Integer>();//OPS_PER_CLIENT*(100-PERCENT_READS)*(NUM_NEW_EDGES+1)/100);
     TitanGraph graph;
     public final int proc;
 
@@ -69,7 +71,6 @@ public class TitanThroughput implements Runnable {
                 int node = TitanThroughput.getNewNodeId();
                 Vertex v = graph.addVertex(null);
                 v.setProperty(ID, node);
-                TitanThroughput.addNewNode(node);
             }
             graph.commit();
         }
@@ -90,19 +91,6 @@ public class TitanThroughput implements Runnable {
         }
         return null;
     }
-
-    /*
-    public HashSet<Vertex> getTwoNeighbors(int start) {
-        HashSet<Vertex> toRet = new HashSet<Vertex>();
-        for (Vertex nbr: getVertex(start).getVertices(Direction.OUT, "nbr")) {
-            toRet.add(nbr);
-            for (Vertex fof : nbr.getVertices(Direction.OUT, "nbr")) {
-                toRet.add(fof);
-            }
-        }
-        return toRet;
-    }
-    */
 
     public boolean req_single(Integer n1, Integer n2, Integer req, final int max_hops) {
         //System.out.println("reachability " + n1 + " to " + n2);
@@ -142,25 +130,13 @@ public class TitanThroughput implements Runnable {
         return node_id++;
     }
 
-    public static synchronized void addNewNode(int id) {
-        vertex_ids.add(id);
-    }
-
     public static synchronized ArrayList<Integer> getRandomNodes(int size) {
         ArrayList<Integer> toRet = new ArrayList<Integer>(size);
-        ArrayList<Integer> idxs = new ArrayList<Integer>(size);
-        if (vertex_ids.size() < size) {
-            return null;
+        while (toRet.size() < size) {
+            Integer toAdd = rand.nextInt(EXISTING_GRAPH_SIZE);
+            if (!toRet.contains(toAdd))
+                toRet.add(toAdd);
         }
-        while (idxs.size() < size) {
-            Integer toAdd = rand.nextInt(vertex_ids.size());
-            if (!idxs.contains(toAdd))
-                idxs.add(toAdd);
-        }
-        for(Integer i : idxs)
-            toRet.add(vertex_ids.get(i));
-
-        //System.out.println(" got idxs " + idxs + " for nodes " + toRet);
         return toRet;
     }
 
@@ -170,19 +146,16 @@ public class TitanThroughput implements Runnable {
             System.out.println("proc " + proc + " done " + num_ops + " ops");
             // do writes
             for (int j = 0; j < 100-PERCENT_READS; j++) {
-                int node = TitanThroughput.getNewNodeId();
-                ArrayList<Integer> out_nbrs = TitanThroughput.getRandomNodes(NUM_NEW_EDGES/2);
-                ArrayList<Integer> in_nbrs = TitanThroughput.getRandomNodes(NUM_NEW_EDGES/2);
-                //System.out.println("node " + node + " with nieghbors " + out_nbrs + " and " + in_nbrs);
                 Vertex v = graph.addVertex(null);
-                v.setProperty(ID, node);
-                for (Integer nbr : out_nbrs)
-                    v.addEdge("nbr", getVertex(nbr));
-                for (Integer nbr : in_nbrs)
-                    getVertex(nbr).addEdge("nbr", v);
+                v.setProperty(ID, TitanThroughput.getNewNodeId());
+
+                Vertex v2 = graph.addVertex(null);
+                v2.setProperty(ID, TitanThroughput.getNewNodeId());
+
+                v.addEdge("nbr", v2);
+
                 graph.commit();
                 num_ops++;
-                TitanThroughput.addNewNode(node);
             }
             // do reads
             for (int j = 0; j < PERCENT_READS; j++) {
