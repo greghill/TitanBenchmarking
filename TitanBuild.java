@@ -75,12 +75,15 @@ public class TitanBuild {
             file = new BufferedReader(new FileReader("graph2.rec"));
             String line;
             int cnt = 0;
+            long ops = 0;
+            long start = System.nanoTime();
             while ((line = file.readLine()) != null) {
                 String[] arr = line.split(" ");
                 Vertex v = graph.addVertex(null);
                 v.setProperty(ID, Integer.valueOf(arr[0]));
                 nodes.add(v);
                 cnt++;
+                ops++;
                 if (cnt % NODE_BATCH_SIZE == 0) {
                     System.out.println("Adding node " + cnt);
                     graph.commit();
@@ -94,33 +97,26 @@ public class TitanBuild {
                 String[] arr = line.split(" ");
                 //System.out.print("Adding edges for node " + arr[0] + ":");
                 for (int i = 1; i < arr.length; i++) {
-                    try {
                         nodes.get(cnt).addEdge("nbr", getVertex(Integer.valueOf(arr[i])));
-                    } catch (java.lang.IllegalArgumentException e) {
-                        continue;
-                    }
-                    //System.out.print(" " + arr[i]);
+                        ops++;
                 }
-                //System.out.print("\nAnd again -- ");
-                for (Edge e: getVertex(Integer.valueOf(arr[0])).getEdges(Direction.OUT, "nbr")) {
-                    TitanVertex v = (TitanVertex) e.getVertex(Direction.IN);
-                    for (TitanProperty p: v.getProperties()) {
-                        //System.out.print(" " + p.getValue(Integer.class));
-                    }
-                }
-                //System.out.println();
                 cnt++;
                 if (cnt % EDGE_BATCH_SIZE == 0) {
                     System.out.println("Adding edges for node " + cnt);
                     graph.commit();
                 }
             }
+            long end = System.nanoTime();
+            System.out.println("took " + (end-start)/1e6 + " milliseconds for " + ops + " ops");
             file.close();
         } catch (java.io.FileNotFoundException e) {
             System.err.println("FileNotFoundException: " + e.getMessage());
             System.exit(-1);
         } catch (java.io.IOException e) {
             System.err.println("Caught IOException: " + e.getMessage());
+            System.exit(-1);
+        } catch (java.lang.IllegalArgumentException e) {
+            System.err.println("Caught IllegalArgumentException: " + e.getMessage());
             System.exit(-1);
         }
 
