@@ -92,6 +92,7 @@ public class TitanThroughput implements Runnable {
         return null;
     }
 
+    /*
     public HashSet<Vertex> getTwoNeighbors(int start) {
         HashSet<Vertex> toRet = new HashSet<Vertex>();
         for (Vertex nbr: getVertex(start).getVertices(Direction.OUT, "nbr")) {
@@ -101,6 +102,41 @@ public class TitanThroughput implements Runnable {
             }
         }
         return toRet;
+    }
+    */
+
+    public boolean req_single(Integer n1, Integer n2, Integer req, final int max_hops) {
+        //System.out.println("reachability " + n1 + " to " + n2);
+        int hops = 0;
+        Object targetId = getVertex(n2).getId();
+        ArrayDeque<Vertex> exploringDepth = new ArrayDeque<Vertex>();
+        ArrayDeque<Vertex> nextDepth = new ArrayDeque<Vertex>();
+        exploringDepth.add(getVertex(n1));
+        while (!exploringDepth.isEmpty() && hops != max_hops){
+            while (!exploringDepth.isEmpty()) {
+                Vertex v = exploringDepth.remove();
+                for (Vertex nbr: v.getVertices(Direction.OUT, "nbr")) {
+                    if (nbr.getId().equals(targetId)) { // found target
+                        graph.rollback();
+                        hops++;
+                        //System.out.println("found in " +hops+" hops");
+                        return true;
+                    }
+                    else if (!req.equals((Integer) nbr.getProperty(VISIT))) {
+                        nbr.setProperty(VISIT, req);
+                        nextDepth.add(nbr);
+                    }
+                }
+            }
+            // finished this depth, swap to next one
+            ArrayDeque<Vertex> temp = exploringDepth;
+            exploringDepth = nextDepth;
+            nextDepth = temp;
+            hops++;
+        }
+        //System.out.println("not found in " +hops+" hops");
+        graph.rollback();
+        return false;
     }
 
     public static synchronized int getNewNodeId() {
@@ -151,17 +187,9 @@ public class TitanThroughput implements Runnable {
             }
             // do reads
             for (int j = 0; j < PERCENT_READS; j++) {
-                int source = TitanThroughput.getRandomNodes(1).get(0);
-                //String toPrint = "neighbors of " + source + " are:";
-                getTwoNeighbors(source);
-                graph.commit();
+                ArrayList<Integer> sourcedest =  TitanThroughput.getRandomNodes(2);
+                req_single(sourcedest.get(0), sourcedest.get(1), num_ops, 2); // calls rollback on transactio for us
                 num_ops++;
-                /*
-                for (Vertex v : fof) {
-                    toPrint += " " + v.getId();
-                }
-                System.out.println(toPrint);
-                */
             }
         }
         long end = System.nanoTime();
