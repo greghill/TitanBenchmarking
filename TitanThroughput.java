@@ -183,9 +183,8 @@ public class TitanThroughput implements Runnable {
                 System.out.println("finished " + i);
             }
             long end = System.nanoTime();
-            System.out.println("took sum " + (end-start)/1e6 + " milliseconds");
             double div = NUM_CLIENTS * OPS_PER_CLIENT;
-            System.out.println("or " + (end-start)/(div * 1e6) + " milliseconds");
+            System.out.println("took " + (end-start)/1e6 + " milliseconds or " + (end-start)/(div * 1e6) + " milliseconds per op");
         } catch(Exception e) {
             e.printStackTrace();
         }
