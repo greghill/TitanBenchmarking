@@ -19,6 +19,7 @@ import java.util.Random;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.ArrayDeque;
+import java.util.HashMap;
 import java.lang.Thread;
 
 import static com.thinkaurelius.titan.graphdb.configuration.GraphDatabaseConfiguration.INDEX_BACKEND_KEY;
@@ -29,9 +30,9 @@ public class TitanTriangleCount implements Runnable {
 
     public static final Random rand = new Random();
     public static final int EXISTING_GRAPH_SIZE = 10000;
-    public static final int NUM_CLIENTS = 2;
+    public static final int NUM_CLIENTS = 1;
     public static final int NODES_PER_CLIENT = EXISTING_GRAPH_SIZE/NUM_CLIENTS;
-    public static final int NODES_PER_BATCH = 5000;
+    public static final int NODES_PER_BATCH = 10000;
     public static final String INDEX_NAME = "search";
     public static final String ID = "vertex_id";
     public static final String VISIT = "visit";
@@ -69,36 +70,25 @@ public class TitanTriangleCount implements Runnable {
 
     public int countTrianglesOne(Vertex v) {
         int triangles = 0;
-        Hashmap<Vertex, HashSet<Vertex>> fof = new Hashmap<Vertex, HashSet<Vertex>>;
+        HashMap<Vertex, HashSet<Vertex>> fof = new HashMap<Vertex, HashSet<Vertex>>();
         for (Vertex nbr : v.getVertices(Direction.OUT, "nbr")) {
-            if (!fof.contains(nbr)) {
+            if (!fof.containsKey(nbr)) {
                 HashSet<Vertex> toAdd = new HashSet<Vertex>();
-                for (Vertex 2nbr : nbr.getVertices(Direction.OUT, "nbr")){
-                    toAdd.add(2nbr);
+                for (Vertex twonbr : nbr.getVertices(Direction.OUT, "nbr")){
+                    toAdd.add(twonbr);
                 }
-                fof.insert(nbr, toAdd);
+                fof.put(nbr, toAdd);
             }
         }
 
-        ArrayList<Vertex> nbrSet = new ArrayList<Vertex>(nbrs);
-        for (Vertex v : fof.keySet()) {
-            nbrSet.add(v);
+        ArrayList<Vertex> friends = new ArrayList<Vertex>();
+        for (Vertex vert : fof.keySet()) {
+            friends.add(vert);
         }
 
-        for (int  i = 0; i < nbrSet.size()-1; i++) {
-            for(int j = i+1; j<nbrSet.size();j++) {
-                if (fof[friends[i]].contains(friends[j]) || fof[friends[j]].contains(friends[i])) {
-                    triangles++;
-                }
-            }
-        }
-
-
-    inline uint64_t calc_triangles(std::unordered_map<uint64_t, std::unordered_set<uint64_t>>& fof, std::vector<uint64_t>& friends) {
-        uint64_t triangles = 0;
-        for (uint64_t  i = 0; i < friends.size()-1; i++) {
-            for(uint64_t j = i+1; j<friends.size();j++) {
-                if (fof[friends[i]].count(friends[j]) || fof[friends[j]].count(friends[i])) {
+        for (int  i = 0; i < friends.size()-1; i++) {
+            for(int j = i+1; j<friends.size();j++) {
+                if (fof.get(friends.get(i)).contains(friends.get(j)) || fof.get(friends.get(j)).contains(friends.get(i))) {
                     triangles++;
                 }
             }
@@ -125,10 +115,8 @@ public class TitanTriangleCount implements Runnable {
     }
 
     public void run() {
-        if (proc != 0) {
             System.out.println("client " +proc + " found " +  countTriangles() + " triangles");
             graph.rollback();
-        }
     }
 
     public static void main (String[] args) {
