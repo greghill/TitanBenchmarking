@@ -4,12 +4,13 @@ import com.thinkaurelius.titan.core.TitanKey;
 import com.thinkaurelius.titan.core.TitanProperty;
 import com.thinkaurelius.titan.core.TitanVertex;
 import com.thinkaurelius.titan.core.TitanGraphQuery;
-import com.thinkaurelius.titan.core.attribute.Geoshape;
+import com.thinkaurelius.titan.core.attribute.Interval;
 import com.thinkaurelius.titan.graphdb.configuration.GraphDatabaseConfiguration;
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Edge;
 import com.tinkerpop.blueprints.Vertex;
 import com.tinkerpop.blueprints.util.ElementHelper;
+import com.tinkerpop.gremlin.java.*;
 import org.apache.commons.configuration.BaseConfiguration;
 import org.apache.commons.configuration.Configuration;
 
@@ -28,15 +29,13 @@ public class TitanTriangleCount implements Runnable {
 
     public static final Random rand = new Random();
     public static final int EXISTING_GRAPH_SIZE = 10000;
-    public static final int OPS_PER_CLIENT = 1000;
-    public static final int PERCENT_READS = 50;
-    public static final int NUM_CLIENTS = 1;
-    public static final int NUM_NEW_EDGES = 2;
+    public static final int NUM_CLIENTS = 2;
+    public static final int NODES_PER_CLIENT = EXISTING_GRAPH_SIZE/NUM_CLIENTS;
+    public static final int NODES_PER_BATCH = 5000;
     public static final String INDEX_NAME = "search";
     public static final String ID = "vertex_id";
     public static final String VISIT = "visit";
 
-    public static int node_id = EXISTING_GRAPH_SIZE + 1;
     TitanGraph graph;
     public final int proc;
 
@@ -50,6 +49,7 @@ public class TitanTriangleCount implements Runnable {
         System.out.println("proc " + proc + " created");
     }
 
+/*
     public Vertex getVertex(Integer id) {
     	for (Vertex v: graph.getVertices(ID, id)) {
             return v;
@@ -65,29 +65,70 @@ public class TitanTriangleCount implements Runnable {
         }
         return null;
     }
+    */
 
     public int countTrianglesOne(Vertex v) {
-        int toRet = 0;
+        int triangles = 0;
+        Hashmap<Vertex, HashSet<Vertex>> fof = new Hashmap<Vertex, HashSet<Vertex>>;
         for (Vertex nbr : v.getVertices(Direction.OUT, "nbr")) {
-            toRet++;
+            if (!fof.contains(nbr)) {
+                HashSet<Vertex> toAdd = new HashSet<Vertex>();
+                for (Vertex 2nbr : nbr.getVertices(Direction.OUT, "nbr")){
+                    toAdd.add(2nbr);
+                }
+                fof.insert(nbr, toAdd);
+            }
         }
-        return toRet;
+
+        ArrayList<Vertex> nbrSet = new ArrayList<Vertex>(nbrs);
+        for (Vertex v : fof.keySet()) {
+            nbrSet.add(v);
+        }
+
+        for (int  i = 0; i < nbrSet.size()-1; i++) {
+            for(int j = i+1; j<nbrSet.size();j++) {
+                if (fof[friends[i]].contains(friends[j]) || fof[friends[j]].contains(friends[i])) {
+                    triangles++;
+                }
+            }
+        }
+
+
+    inline uint64_t calc_triangles(std::unordered_map<uint64_t, std::unordered_set<uint64_t>>& fof, std::vector<uint64_t>& friends) {
+        uint64_t triangles = 0;
+        for (uint64_t  i = 0; i < friends.size()-1; i++) {
+            for(uint64_t j = i+1; j<friends.size();j++) {
+                if (fof[friends[i]].count(friends[j]) || fof[friends[j]].count(friends[i])) {
+                    triangles++;
+                }
+            }
+        }
+        return triangles;
     }
 
     public int countTriangles() {
         int toRet = 0;
-        TitanGraphQuery vertexRange = graph.query().has(ID, com.thinkaurelius.titan.core.attribute.Cmp.GREATER_THAN, "12"); // change to INTERVAL XXX
-        for (Vertex v : vertexRange.vertices()) {
-            toRet += countTrianglesOne(v);
+        int start = (proc * NODES_PER_CLIENT);
+        int end = start + NODES_PER_BATCH;
+        while (end <= (proc+1)*NODES_PER_CLIENT) {
+            System.out.println("client " + proc + " counting from " + start+ " to " +end);
+            Interval<Integer> range = new Interval<Integer>(start, end);
+            //new GremlinPipeline();
+            TitanGraphQuery vertexRange = graph.query().has(ID, com.thinkaurelius.titan.core.attribute.Cmp.INTERVAL, range);
+            for (Vertex v : vertexRange.vertices()) {
+                toRet += countTrianglesOne(v);
+            }
+            start += NODES_PER_BATCH;
+            end += NODES_PER_BATCH;
         }
         return toRet;
     }
-    public static synchronized int getNewNodeId() {
-        return node_id++;
-    }
 
     public void run() {
-        System.out.println("one thread found " +  countTriangles() + " triangles");
+        if (proc != 0) {
+            System.out.println("client " +proc + " found " +  countTriangles() + " triangles");
+            graph.rollback();
+        }
     }
 
     public static void main (String[] args) {
@@ -103,8 +144,7 @@ public class TitanTriangleCount implements Runnable {
                 System.out.println("finished " + i);
             }
             long end = System.nanoTime();
-            double div = NUM_CLIENTS * OPS_PER_CLIENT;
-            System.out.println("took " + (end-start)/1e6 + " milliseconds or " + (end-start)/(div * 1e6) + " milliseconds per op");
+            System.out.println("took " + (end-start)/1e6 + " milliseconds ");
         } catch(Exception e) {
             e.printStackTrace();
         }
